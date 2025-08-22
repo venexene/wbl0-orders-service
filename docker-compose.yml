@@ -2,7 +2,7 @@ services:
 
   db:
     image: postgres
-    container_name: wbl0-orders-db
+    container_name: wbl0-orders-database
     restart: always
     environment:
       POSTGRES_DB: ${DB_NAME}
@@ -24,7 +24,7 @@ services:
 
   app:
     build: .
-    container_name: wbl0-orders-service
+    container_name: wbl0-orders-app
     depends_on:
       db:
         condition: service_healthy

@@ -35,7 +35,9 @@ func main() {
     defer pool.Close()
     log.Println("DataBase connected")
 
+	storage := database.NewStorage(pool)
 
+    log.Println("DataBase connected")
 	// Создание роутера
 	router := gin.Default()
 
@@ -67,7 +69,7 @@ func main() {
 
 	//Эндпоинт для получения информации о заказе
 	router.GET("/orders/:uid", func(c *gin.Context) {
-    	handlers.GetOrderByUIDHandler(c, pool)
+    	handlers.GetOrderByUIDHandler(c, storage)
 	})
 
 

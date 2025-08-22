@@ -11,7 +11,13 @@ import (
     "github.com/venexene/wbl0-orders-service/internal/models"
 )
 
+type Storage struct {
+    pool *pgxpool.Pool
+}
 
+func NewStorage(pool *pgxpool.Pool) *Storage {
+    return &Storage{pool: pool}
+}
 
 // Создание пула соединений к базе данных
 func CreatePool(cfg *config.Config) (*pgxpool.Pool, error) {
@@ -33,12 +39,12 @@ func CreatePool(cfg *config.Config) (*pgxpool.Pool, error) {
     // Создание пула для соедиения
     pool, err := pgxpool.New(context, connectionStr)
     if err != nil {
-        return nil, fmt.Errorf("Failed to create pool: %v", err)
+        return pool, fmt.Errorf("Failed to create pool: %v", err)
     }
 
     // Проверка соединения
     if err := pool.Ping(context); err != nil {
-        return nil, fmt.Errorf("Failed to ping database: %v", err)
+        return pool, fmt.Errorf("Failed to ping database: %v", err)
     }
 
     return pool, nil
@@ -47,11 +53,11 @@ func CreatePool(cfg *config.Config) (*pgxpool.Pool, error) {
 
 
 // Получение заказа по UID из базы данных
-func GetOrderByUID(context context.Context, pool *pgxpool.Pool, orderUID string) (*models.Order, error) {
+func (s *Storage) GetOrderByUID(context context.Context, orderUID string) (*models.Order, error) {
     // Получение основной информации о заказе
     orderQuery := "SELECT * FROM orders WHERE order_uid = $1"
     var order models.Order
-    err := pool.QueryRow(context, orderQuery, orderUID).Scan(
+    err := s.pool.QueryRow(context, orderQuery, orderUID).Scan(
         &order.OrderUID,
         &order.TrackNumber,
         &order.Entry,
@@ -76,7 +82,7 @@ func GetOrderByUID(context context.Context, pool *pgxpool.Pool, orderUID string)
     // Получение информации о доставке
     deliveryQuery := "SELECT name, phone, zip, city, address, region, email FROM delivery WHERE order_uid = $1"
     var delivery models.Delivery
-    err = pool.QueryRow(context, deliveryQuery, orderUID).Scan(
+    err = s.pool.QueryRow(context, deliveryQuery, orderUID).Scan(
         &delivery.Name,
         &delivery.Phone,
         &delivery.Zip,
@@ -94,7 +100,7 @@ func GetOrderByUID(context context.Context, pool *pgxpool.Pool, orderUID string)
     // Получение информации о платеже
     paymentQuery := "SELECT transaction, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee FROM payment WHERE order_uid = $1"
     var payment models.Payment
-    err = pool.QueryRow(context, paymentQuery, orderUID).Scan(
+    err = s.pool.QueryRow(context, paymentQuery, orderUID).Scan(
         &payment.Transaction,
         &payment.Currency,
         &payment.Provider,
@@ -113,7 +119,7 @@ func GetOrderByUID(context context.Context, pool *pgxpool.Pool, orderUID string)
 
     // Получение информации о товарах
     itemsQuery := "SELECT chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status FROM item WHERE order_uid = $1"
-    rows, err := pool.Query(context, itemsQuery, orderUID)
+    rows, err := s.pool.Query(context, itemsQuery, orderUID)
     if err != nil {
         return nil, fmt.Errorf("Failed to query items: %v", err)
     }

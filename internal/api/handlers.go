@@ -6,13 +6,12 @@ import (
     "log"
     "context"
     "github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/venexene/wbl0-orders-service/internal/db"
     "github.com/gin-gonic/gin"
 )
 
 // Хендлер для обработки запроса на получение всей информации о заказе по UID
-func GetOrderByUIDHandler(c *gin.Context, dbPool *pgxpool.Pool) {
+func GetOrderByUIDHandler(c *gin.Context, storage *database.Storage) {
     orderUID := c.Param("uid") // Извлечение UID из URL
     
     // Проверка что передан не пустой UID
@@ -24,7 +23,7 @@ func GetOrderByUIDHandler(c *gin.Context, dbPool *pgxpool.Pool) {
     }
 
     // Вызов функции получения всей информации о заказе по UID
-    order, err := database.GetOrderByUID(c.Request.Context(), dbPool, orderUID)
+    order, err := storage.GetOrderByUID(c.Request.Context(), orderUID)
     
     //Обработка ошибок получения заказа
     if err != nil {
