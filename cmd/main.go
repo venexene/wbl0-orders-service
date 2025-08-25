@@ -37,7 +37,6 @@ func main() {
 
 	storage := database.NewStorage(pool)
 
-    log.Println("DataBase connected")
 	// Создание роутера
 	router := gin.Default()
 

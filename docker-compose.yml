@@ -29,21 +29,40 @@ services:
       db:
         condition: service_healthy
     environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - DB_SSL_MODE=${DB_SSL_MODE}
-      - KAFKA_BROKERS=${KAFKA_BROKERS}
-      - KAFKA_TOPIC=${KAFKA_TOPIC}
-      - KAFKA_GROUP_ID=${KAFKA_GROUP_ID}
+       - DB_HOST=${DB_HOST}
+       - DB_PORT=${DB_PORT}
+       - DB_USER=${DB_USER}
+       - DB_PASSWORD=${DB_PASSWORD}
+       - DB_NAME=${DB_NAME}
+       - DB_SSL_MODE=${DB_SSL_MODE}
+       - KAFKA_BROKERS=${KAFKA_BROKERS}
+       - KAFKA_TOPIC=${KAFKA_TOPIC}
+       - KAFKA_GROUP_ID=${KAFKA_GROUP_ID}
     ports:
       - "${HTTP_PORT}:8080"
+    networks:
+      - orders-network
+    restart: unless-stopped
+
+  
+  kafka:
+    image: bitnami/kafka:latest
+    ports:
+      - "${KAFKA_PORT}:9092"
+      - "${KAFKA_CONTROLLER_PORT}:9093"
+    environment:
+      - KAFKA_KRAFT_ENABLED=true
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:${KAFKA_PORT}
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - ALLOW_PLAINTEXT_LISTENER=yes
     volumes:
-      - .:/app
-      - ./web:/app/web
-    working_dir: /app
+      - kafka_data:/bitnami
     networks:
       - orders-network
     restart: unless-stopped
@@ -51,6 +70,8 @@ services:
 
 volumes:
   postgres_data:
+  zookeeper_data:
+  kafka_data:
 
 
 networks:
