@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 	"github.com/gin-gonic/gin"
+	"github.com/segmentio/kafka-go"
 	"github.com/venexene/wbl0-orders-service/internal/config"
 	"github.com/venexene/wbl0-orders-service/internal/db"
 	"github.com/venexene/wbl0-orders-service/internal/api"
@@ -64,6 +65,31 @@ func main() {
 			"status": result,
         })
     })
+
+
+	//Тестовый эндпоинт для проверки работы Kafka
+	router.GET("/kafka_check", func(c *gin.Context) {
+		kafkaBrokers := cfg.KafkaBrokers
+
+		ctx_kafka, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+		defer cancel()
+
+		conn_kafka, err := kafka.DialContext(ctx_kafka, "tcp", kafkaBrokers)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error" : "Failed to connect Kafka",
+			})
+			return
+		}
+		defer conn_kafka.Close()
+
+		broker := conn_kafka.Broker()
+		c.JSON(http.StatusOK, gin.H {
+			"status": "Kafka definetly works",
+			"brokers": kafkaBrokers,
+			"broker_id": broker.ID,
+		})
+	})
 
 
 	//Эндпоинт для получения информации о заказе
