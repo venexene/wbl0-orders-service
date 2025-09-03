@@ -3,7 +3,6 @@ package handlers
 import (
     "net/http"
 	"errors"
-    "log"
     "context"
     "github.com/jackc/pgx/v5"
 	"github.com/venexene/wbl0-orders-service/internal/db"
@@ -39,7 +38,6 @@ func GetOrderByUIDHandler(c *gin.Context, storage *database.Storage) {
             })
         } else {
             // Другие ошибки
-            log.Printf("Database error: %v", err) // Логирование для дебагинга
             c.JSON(http.StatusInternalServerError, gin.H{
                 "error": "Internal server error",
             })

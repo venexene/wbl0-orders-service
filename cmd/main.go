@@ -7,11 +7,13 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"strings"
 	"github.com/gin-gonic/gin"
 	"github.com/segmentio/kafka-go"
 	"github.com/venexene/wbl0-orders-service/internal/config"
 	"github.com/venexene/wbl0-orders-service/internal/db"
 	"github.com/venexene/wbl0-orders-service/internal/api"
+	"github.com/venexene/wbl0-orders-service/internal/kafka"
 )
 
 func main() {
@@ -21,6 +23,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
+	log.Println("Loaded config")
 
 
 	// Создание контекста для получения сигнала о завершении
@@ -28,18 +31,35 @@ func main() {
 	defer stop()
 
 
-	// Подключение к базе данных через создание пула соединений
+	// Подключение к БД через создание пула соединений
     pool, err := database.CreatePool(cfg)
     if err != nil {
         log.Fatalf("Failed to connect database: %v", err)
     }
     defer pool.Close()
-    log.Println("DataBase connected")
-
 	storage := database.NewStorage(pool)
+	log.Println("Connected database")
+
+	
+	// Создание консьюмера Kafka
+	kafkaConsumer := consumer.NewConsumer(
+		strings.Split(cfg.KafkaBrokers, ","),
+		cfg.KafkaTopic,
+		storage,
+	)
+	defer kafkaConsumer.Close()
+	log.Println("Created Kafka consumer")
+
+	//Запуск консьюмера в горутине
+	go func() {
+		kafkaConsumer.Consume(context.Background())
+	} ()
+	log.Printf("Started consume proccess for topic %s", cfg.KafkaTopic)
+	
 
 	// Создание роутера
 	router := gin.Default()
+	log.Printf("Created GIN router")
 
 
     //Тестовый эндпоинт для проверки работы сервера
@@ -85,8 +105,8 @@ func main() {
 
 		broker := conn_kafka.Broker()
 		c.JSON(http.StatusOK, gin.H {
-			"status": "Kafka definetly works",
-			"brokers": kafkaBrokers,
+			"status":    "Kafka definetly works",
+			"brokers":   kafkaBrokers,
 			"broker_id": broker.ID,
 		})
 	})
@@ -103,6 +123,8 @@ func main() {
 		Addr:    ":" + cfg.HTTPPort,
 		Handler: router,
 	}
+	log.Printf("Created server")
+
 
 	// Запуск сервера в горутине
 	go func() {
@@ -110,7 +132,7 @@ func main() {
 			log.Fatalf("HTTP server error: %v", err)
 		}
 	}()
-	log.Printf("HTTP server started on port %s", cfg.HTTPPort)
+	log.Printf("Started HTTP server on port %s", cfg.HTTPPort)
 
 
 	// Ожидание сигнала завершения

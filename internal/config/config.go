@@ -7,16 +7,15 @@ import (
 
 // Структура для определения всех конфигураций
 type Config struct {
-	HTTPPort  string
-    DBHost    string
-    DBPort    string
-    DBUser    string
-    DBPass    string
-    DBName    string
-    DBSSLMode string
+	HTTPPort     string
+    DBHost       string
+    DBPort       string
+    DBUser       string
+    DBPass       string
+    DBName       string
+    DBSSLMode    string
     KafkaBrokers string
     KafkaTopic   string
-    KafkaGroupID string
 }
 
 func Load() (*Config, error) {
@@ -36,6 +35,5 @@ func Load() (*Config, error) {
         DBSSLMode:os.Getenv("DB_SSL_MODE"),
         KafkaBrokers:os.Getenv("KAFKA_BROKERS"),
         KafkaTopic:os.Getenv("KAFKA_TOPIC"),
-        KafkaGroupID:os.Getenv("KAFKA_GROUP_ID"),
 	}, nil
 }

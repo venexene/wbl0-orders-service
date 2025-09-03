@@ -4,6 +4,7 @@ import (
     "time"
 )
 
+//Структура для заказа
 type Order struct {
     OrderUID          string  `json:"order_uid"`
     TrackNumber       string  `json:"track_number"`
@@ -21,6 +22,7 @@ type Order struct {
     Items             []Item   `json:"items"`
 }
 
+//Структура для доставки
 type Delivery struct {
     OrderUID string `json:"-"`
     Name     string `json:"name"`
@@ -32,9 +34,11 @@ type Delivery struct {
     Email    string `json:"email"`
 }
 
+//Структура для оплаты
 type Payment struct {
     OrderUID     string `json:"-"`
     Transaction  string `json:"transaction"`
+    RequestID    string `json:"request_id"`
     Currency     string `json:"currency"`
     Provider     string `json:"provider"`
     Amount       int    `json:"amount"`
@@ -45,6 +49,7 @@ type Payment struct {
     CustomFee    int    `json:"custom_fee"`
 }
 
+//Структура для предмета заказа
 type Item struct {
     ID          int    `json:"-"`
     OrderUID    string `json:"-"`

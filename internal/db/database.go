@@ -11,15 +11,17 @@ import (
     "github.com/venexene/wbl0-orders-service/internal/models"
 )
 
+// Структура для работы с БД
 type Storage struct {
     pool *pgxpool.Pool
 }
 
+// Конструктор структуры для БД
 func NewStorage(pool *pgxpool.Pool) *Storage {
     return &Storage{pool: pool}
 }
 
-// Создание пула соединений к базе данных
+// Создание пула соединений к БД
 func CreatePool(cfg *config.Config) (*pgxpool.Pool, error) {
     // Формирование строки подключения
     connectionStr := fmt.Sprintf(
@@ -52,7 +54,7 @@ func CreatePool(cfg *config.Config) (*pgxpool.Pool, error) {
 
 
 
-// Получение заказа по UID из базы данных
+// Получение заказа по UID из БД
 func (s *Storage) GetOrderByUID(context context.Context, orderUID string) (*models.Order, error) {
     // Получение основной информации о заказе
     orderQuery := "SELECT * FROM orders WHERE order_uid = $1"
@@ -98,10 +100,11 @@ func (s *Storage) GetOrderByUID(context context.Context, orderUID string) (*mode
 
 
     // Получение информации о платеже
-    paymentQuery := "SELECT transaction, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee FROM payment WHERE order_uid = $1"
+    paymentQuery := "SELECT transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee FROM payment WHERE order_uid = $1"
     var payment models.Payment
     err = s.pool.QueryRow(context, paymentQuery, orderUID).Scan(
         &payment.Transaction,
+        &payment.RequestID,
         &payment.Currency,
         &payment.Provider,
         &payment.Amount,
@@ -159,7 +162,7 @@ func (s *Storage) GetOrderByUID(context context.Context, orderUID string) (*mode
 }
 
 
-// Добавление заказа в базу данных
+// Добавление заказа в БД
 func (s *Storage) AddOrder(ctx context.Context, order *models.Order) error {
     // Начало транзакции для атомарного добавления данных
     tx, err := s.pool.Begin(ctx)
@@ -172,7 +175,7 @@ func (s *Storage) AddOrder(ctx context.Context, order *models.Order) error {
     orderQuery := `
         INSERT INTO orders (
             order_uid, track_number, entry, locale, internal_signature,
-            customer_id, delivery_service, shard_key, sm_id, date_created, oof_shard
+            customer_id, delivery_service, shardkey, sm_id, date_created, oof_shard
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
     `
     _, err = tx.Exec(ctx, orderQuery,
@@ -215,13 +218,14 @@ func (s *Storage) AddOrder(ctx context.Context, order *models.Order) error {
     // Добавление информации о платеже
     paymentQuery := `
         INSERT INTO payment (
-            order_uid, transaction, currency, provider, amount, 
+            order_uid, transaction, request_id, currency, provider, amount, 
             payment_dt, bank, delivery_cost, goods_total, custom_fee
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
     `
     _, err = tx.Exec(ctx, paymentQuery,
         order.OrderUID,
         order.Payment.Transaction,
+        order.Payment.RequestID,
         order.Payment.Currency,
         order.Payment.Provider,
         order.Payment.Amount,
@@ -275,10 +279,12 @@ func (s *Storage) AddOrder(ctx context.Context, order *models.Order) error {
 func (s *Storage) OrderExists(ctx context.Context, orderUID string) (bool, error) {
     query := "SELECT EXISTS(SELECT 1 FROM orders WHERE order_uid = $1)"
     var exists bool
+
     err := s.pool.QueryRow(ctx, query, orderUID).Scan(&exists)
     if err != nil {
         return false, fmt.Errorf("Failed to check order existence: %v", err)
     }
+
     return exists, nil
 }
 
