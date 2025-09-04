@@ -60,32 +60,36 @@ func main() {
 	log.Printf("Created GIN router")
 
 
+	// Создание хендлера
+	handler := handlers.NewHandler(storage, cfg)
+
+
     //Тестовый эндпоинт для проверки работы сервера
     router.GET("/server_check", func(c *gin.Context) {
-		handlers.TestServerHandler(c)
+		handler.TestServerHandle(c)
     })
 
     //Тестовый эндпоинт для проверки подключения к базе
     router.GET("/db_check", func(c *gin.Context) {
-		handlers.TestDBHandler(c, storage)
+		handler.TestDBHandle(c)
     })
 
 	//Тестовый эндпоинт для проверки работы Kafka
 	router.GET("/kafka_check", func(c *gin.Context) {
-		handlers.TestKafkaHandler(c, cfg)
+		handler.TestKafkaHandle(c)
 	})
 
 	//Эндпоинт для получения информации о заказе по UID
 	router.GET("/orders/:uid", func(c *gin.Context) {
-    	handlers.GetOrderByUIDHandler(c, storage)
+    	handler.GetOrderByUIDHandle(c)
 	})
 
 	//Эндпоинт для получения UID всех заказов
 	router.GET("/all_orders_uids", func(c *gin.Context) {
-    	handlers.GetAllOrdersUIDHandler(c, storage)
+    	handler.GetAllOrdersUIDHandle(c)
 	})
 
-	
+
 	// Создание сервера
 	srv := &http.Server{
 		Addr:    ":" + cfg.HTTPPort,

@@ -14,8 +14,23 @@ import (
 )
 
 
+// Структура хендлера
+type Handler struct {
+    storage *database.Storage
+    cfg *config.Config
+}
+
+// Конструктор структуры хендлера
+func NewHandler(storage *database.Storage, cfg *config.Config) *Handler {
+    return &Handler{
+        storage: storage,
+        cfg: cfg,
+    }
+}
+
+
 // Хендлер для обработки тестового запроса к серверу
-func TestServerHandler(c *gin.Context) {
+func (h *Handler) TestServerHandle(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
         "status": "Server definetly works",
     })
@@ -23,8 +38,8 @@ func TestServerHandler(c *gin.Context) {
 
 
 // Хендлер для обработки тестового запроса к БД
-func TestDBHandler(c *gin.Context, storage *database.Storage) {
-    res, err := storage.TestDB()
+func (h *Handler) TestDBHandle(c *gin.Context) {
+    res, err := h.storage.TestDB()
     if err != nil {
         log.Printf("Failed to test database: %v", err)
         c.JSON(http.StatusInternalServerError, gin.H{
@@ -40,8 +55,8 @@ func TestDBHandler(c *gin.Context, storage *database.Storage) {
 
 
 // Хендлер для обработки тестового запроса к Kafka
-func TestKafkaHandler(c *gin.Context, cfg *config.Config) {
-    kafkaBrokers := cfg.KafkaBrokers
+func (h *Handler) TestKafkaHandle(c *gin.Context) {
+    kafkaBrokers := h.cfg.KafkaBrokers
 
     // Контекст с таймаутом для ограничения времени выполнения операции с Kafka
     ctxKafka, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
@@ -68,7 +83,7 @@ func TestKafkaHandler(c *gin.Context, cfg *config.Config) {
 
 
 // Хендлер для обработки запроса на получение всей информации о заказе по UID
-func GetOrderByUIDHandler(c *gin.Context, storage *database.Storage) {
+func (h *Handler) GetOrderByUIDHandle(c *gin.Context) {
     orderUID := c.Param("uid") // Извлечение UID из URL
     
     // Проверка что передан не пустой UID
@@ -80,7 +95,7 @@ func GetOrderByUIDHandler(c *gin.Context, storage *database.Storage) {
     }
 
     // Вызов функции получения всей информации о заказе по UID
-    order, err := storage.GetOrderByUID(c.Request.Context(), orderUID)
+    order, err := h.storage.GetOrderByUID(c.Request.Context(), orderUID)
     
     //Обработка ошибок получения заказа
     if err != nil {
@@ -102,8 +117,8 @@ func GetOrderByUIDHandler(c *gin.Context, storage *database.Storage) {
 
 
 // Хендлер для получения UID всех заказов
-func GetAllOrdersUIDHandler(c *gin.Context, storage *database.Storage) {
-    orderUIDs, err := storage.GetAllOrdersUID(c)
+func (h *Handler) GetAllOrdersUIDHandle(c *gin.Context) {
+    orderUIDs, err := h.storage.GetAllOrdersUID(c)
 
     if err != nil {
         log.Printf("Failed to get UIDs: %v", err)
