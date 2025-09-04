@@ -9,7 +9,6 @@ import (
 	"time"
 	"strings"
 	"github.com/gin-gonic/gin"
-	"github.com/segmentio/kafka-go"
 	"github.com/venexene/wbl0-orders-service/internal/config"
 	"github.com/venexene/wbl0-orders-service/internal/db"
 	"github.com/venexene/wbl0-orders-service/internal/api"
@@ -17,7 +16,6 @@ import (
 )
 
 func main() {
-
 	// Получение конфигураций
 	cfg, err := config.Load()
 	if err != nil {
@@ -64,60 +62,30 @@ func main() {
 
     //Тестовый эндпоинт для проверки работы сервера
     router.GET("/server_check", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "Server definetly works",
-        })
+		handlers.TestServerHandler(c)
     })
-
 
     //Тестовый эндпоинт для проверки подключения к базе
     router.GET("/db_check", func(c *gin.Context) {
-		var result string
-		err := pool.QueryRow(context.Background(), "SELECT 'DataBase definetly works'").Scan(&result)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Failed to connect database",
-			})
-			return
-		}
-    
-		c.JSON(http.StatusOK, gin.H{
-			"status": result,
-        })
+		handlers.TestDBHandler(c, storage)
     })
-
 
 	//Тестовый эндпоинт для проверки работы Kafka
 	router.GET("/kafka_check", func(c *gin.Context) {
-		kafkaBrokers := cfg.KafkaBrokers
-
-		ctx_kafka, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
-		defer cancel()
-
-		conn_kafka, err := kafka.DialContext(ctx_kafka, "tcp", kafkaBrokers)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error" : "Failed to connect Kafka",
-			})
-			return
-		}
-		defer conn_kafka.Close()
-
-		broker := conn_kafka.Broker()
-		c.JSON(http.StatusOK, gin.H {
-			"status":    "Kafka definetly works",
-			"brokers":   kafkaBrokers,
-			"broker_id": broker.ID,
-		})
+		handlers.TestKafkaHandler(c, cfg)
 	})
 
-
-	//Эндпоинт для получения информации о заказе
+	//Эндпоинт для получения информации о заказе по UID
 	router.GET("/orders/:uid", func(c *gin.Context) {
     	handlers.GetOrderByUIDHandler(c, storage)
 	})
 
+	//Эндпоинт для получения UID всех заказов
+	router.GET("/all_orders_uids", func(c *gin.Context) {
+    	handlers.GetAllOrdersUIDHandler(c, storage)
+	})
 
+	
 	// Создание сервера
 	srv := &http.Server{
 		Addr:    ":" + cfg.HTTPPort,

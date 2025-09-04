@@ -21,6 +21,7 @@ func NewStorage(pool *pgxpool.Pool) *Storage {
     return &Storage{pool: pool}
 }
 
+
 // Создание пула соединений к БД
 func CreatePool(cfg *config.Config) (*pgxpool.Pool, error) {
     // Формирование строки подключения
@@ -52,6 +53,13 @@ func CreatePool(cfg *config.Config) (*pgxpool.Pool, error) {
     return pool, nil
 }
 
+
+// Тестовый метод БД
+func (s *Storage) TestDB() (string, error) {
+    var result string
+    err := s.pool.QueryRow(context.Background(), "SELECT 'DataBase definetly works'").Scan(&result)
+    return result, err
+}
 
 
 // Получение заказа по UID из БД
@@ -300,4 +308,35 @@ func (s *Storage) AddOrderIfNotExists(ctx context.Context, order *models.Order) 
     }
     
     return s.AddOrder(ctx, order)
+}
+
+
+// Получение UID всех заказов
+func (s *Storage) GetAllOrdersUID(ctx context.Context) ([]string, error) {
+    query := "SELECT order_uid FROM orders"
+
+    // Получение всех uid из БД
+    rows, err := s.pool.Query(ctx, query)
+    if err != nil {
+        return nil, fmt.Errorf("Failed to scan orders: %v", err)
+    }
+    defer rows.Close()
+
+    var listUIDs []string // Срез для всех UID
+
+    // Добавление всех uid в срез
+    for rows.Next() {
+        var uid string;
+        if err := rows.Scan(&uid); err != nil {
+            return nil, fmt.Errorf("Failed to scan order_uid: %v", err)
+        }
+        listUIDs = append(listUIDs, uid)
+    }
+
+    // Обработка ошибок итерации
+    if err := rows.Err(); err != nil {
+        return nil, fmt.Errorf("Failed to iterate order_uid: %v", err)
+    }
+
+    return listUIDs, nil
 }
