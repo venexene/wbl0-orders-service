@@ -105,7 +105,7 @@ services:
     command: >
       bash -c "
       echo 'Waiting for Kafka and topic to be ready...';
-      sleep 30;
+      sleep 15;
       ./emulator
       "
     networks:

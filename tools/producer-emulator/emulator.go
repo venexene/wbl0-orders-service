@@ -2,13 +2,15 @@ package main
 
 import (
 	"context"
+    crand "crypto/rand"
+    mrand "math/rand/v2"
 	"encoding/json"
+	"fmt"
+	"log"
 	"time"
-    "log"
 
 	"github.com/segmentio/kafka-go"
 )
-
 
 //Структура для заказа
 type Order struct {
@@ -83,96 +85,132 @@ func main() {
 		Topic:    topic, // Установка топика
 	}
 	defer writer.Close() // Отложенное закрытие соединения с райтером
+    
+    // Отправка 10 сообщений о добавлении случайных заказов в БД
+    for i := 0; i < 10; i++ {
+        order := generateRandomOrder()
 
-    // Тестовый заказ
-	testOrder := Order{
-		OrderUID: "6d2a89ac-0ede-40cd-9fed-bd6b88d855b0",
-    	TrackNumber: "WBMYTESTTRACKNUMBER",
-    	Entry: "WBMY",
-    	Locale: "ru",
-    	InternalSignature: "",
-    	CustomerID: "test_id",
-    	DeliveryService: "test_service",
-    	ShardKey: "9",
-    	SMID: 99,
-    	DateCreated: time.Now(),
-    	OOFShard: "2",
+        // Отправка сообщения в Kafka
+        message, err := json.Marshal(order)
+        if err != nil {
+            log.Printf("Failed to marshal order: %v", err)
+			continue
+        }
 
-		Delivery: Delivery{
-            OrderUID: "6d2a89ac-0ede-40cd-9fed-bd6b88d855b0",
-            Name: "Kafka Test Testov",
-            Phone: "+9820000000",
-            Zip: "2532712",
-            City: "Rostov-on-Don",
-            Address: "Lenina street 28",
-            Region: "Rostov Region",
-            Email: "kafkatest@gmail.com",
-        },
-
-        Payment: Payment{
-            OrderUID: "6d2a89ac-0ede-40cd-9fed-bd6b88d855b0",
-            Transaction: "6d2a89ac-0ede-40cd-9fed-bd6b88d855b0",
-            RequestID: "",
-            Currency: "RUB",
-            Provider: "WBPAY",
-            Amount: 2156,
-            PaymentDt: 12425325,
-            Bank: "Sber",
-            DeliveryCost: 2000,
-            GoodsTotal: 453,
-            CustomFee: 10,
-        },
-
-        Items: [] Item{
-            {
-                OrderUID: "6d2a89ac-0ede-40cd-9fed-bd6b88d855b0",
-                ChrtID: 2200232,
-                TrackNumber: "WBMYTESTTRACK",
-                Price: 559,
-                Rid: "cb3416617a723ae0btest",
-                Name: "Book",
-                Sale: 20,
-                Size: "3",
-                TotalPrice: 450,
-                NmID: 3335551,
-                Brand: "AST",
-                Status: 404,
+        // Отправка сообщения в Kafka
+        err = writer.WriteMessages(context.Background(),
+            kafka.Message{
+                Key: []byte(order.OrderUID), // Ключа сообщения
+                Value: message, // Тело сообщения
             },
+        )
 
-            {
-                OrderUID: "6d2a89ac-0ede-40cd-9fed-bd6b88d855b0",
-                ChrtID: 2221232,
-                TrackNumber: "WBMYTESTTRACK",
-                Price: 234,
-                Rid: "cb3416617a723ae0btest",
-                Name: "Pen",
-                Sale: 14,
-                Size: "1",
-                TotalPrice: 200,
-                NmID: 3335251,
-                Brand: "AST",
-                Status: 403,
-            },
-        },
-	}
+        if err != nil {
+            log.Fatalf("Failed to write message: %v", err)
+        } else {
+            log.Printf("Message successfully sent to Kafka")
+        }
 
-    // Отправка сообщения в Kafka
-    message, err := json.Marshal(testOrder)
-    if err != nil {
-        log.Fatalf("Failed to marshal order: %v", err)
+        time.Sleep(1 * time.Second)
+    }
+}
+
+// Генерация случайного заказа
+func generateRandomOrder() Order {
+    orderUID := generateUUID()
+    currentTime := time.Now()
+
+    delivery := Delivery {
+        OrderUID: orderUID,
+        Name: generateRandomString(15),
+        Phone: generateRandomPhone(),
+        Zip: fmt.Sprintf("%d", mrand.IntN(100000)),
+        City: generateRandomString(10),
+        Address: generateRandomString(20),
+        Region: generateRandomString(10),
+        Email: generateRandomEmail(),
     }
 
-    // Отправка сообщения в Kafka
-    err = writer.WriteMessages(context.Background(),
-        kafka.Message{
-            Key: []byte(testOrder.OrderUID), // Ключа сообщения
-            Value: message, // Тело сообщения
-        },
-    )
-
-    if err != nil {
-        log.Fatalf("Failed to write message: %v", err)
-    } else {
-        log.Printf("Message successfully sent to Kafka")
+    payment := Payment {
+        OrderUID: orderUID,
+        Transaction: orderUID,
+        RequestID: generateRandomString(10),
+        Currency: "USD",
+        Provider: "WBPAY",
+        Amount: mrand.IntN(100000) + 10,
+        PaymentDt: currentTime.Unix() - int64(mrand.IntN(1000000)),
+        Bank: generateRandomString(10),
+        DeliveryCost: mrand.IntN(1000),
+        GoodsTotal: mrand.IntN(500),
+        CustomFee: mrand.IntN(100),
     }
+
+    itemsCount := mrand.IntN(5) + 1 // Случайное число предметов
+    var items []Item
+    for i := 0; i < itemsCount; i++ {
+        item := Item {
+            OrderUID: orderUID,
+            ChrtID: mrand.IntN(100000),
+            TrackNumber: generateRandomString(10), 
+            Price: mrand.IntN(100000),
+            Rid: generateRandomString(20),
+            Name: generateRandomString(15),
+            Sale: mrand.IntN(99),
+            Size: fmt.Sprintf("%d", mrand.IntN(5) + 1),
+            TotalPrice: mrand.IntN(100000),
+            NmID: mrand.IntN(100000),
+            Brand: generateRandomString(12),
+            Status: mrand.IntN(999),
+        }
+        items = append(items, item)
+    }
+
+    order := Order {
+        OrderUID: orderUID,
+        TrackNumber: generateRandomString(10),
+        Entry: generateRandomString(4),
+        Locale: "ru",
+        InternalSignature: generateRandomString(10),
+        CustomerID: generateRandomString(8),
+        DeliveryService: generateRandomString(7),
+        ShardKey: fmt.Sprintf("%d", mrand.IntN(10)),
+        SMID: mrand.IntN(100),
+        DateCreated: currentTime,
+        OOFShard: fmt.Sprintf("%d", mrand.IntN(10)),
+        Delivery: delivery,
+        Payment: payment,
+        Items: items,
+    }
+    
+    return order
+}
+
+
+// Генерация случайной строки
+func generateRandomString(length int) string {
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    b := make([]byte, length)
+    for i := range b {
+        b[i] = charset[mrand.IntN(len(charset))]
+    }
+    return string(b)
+}
+
+
+// Генерация случайного UUID
+func generateUUID() string {
+    b := make([]byte, 16)
+    crand.Read(b)
+    return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+}
+
+
+// Генерация слайного номера телефона
+func generateRandomPhone() string {
+    return fmt.Sprintf("+7%d", mrand.IntN(1000000000))
+}
+
+// Генерация случайного email
+func generateRandomEmail() string {
+    return fmt.Sprintf("%s@%s.com", generateRandomString(10), generateRandomString(5))
 }
