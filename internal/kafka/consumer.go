@@ -7,14 +7,17 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
+	"github.com/go-playground/validator/v10"
+
 	"github.com/venexene/wbl0-orders-service/internal/db"
 	"github.com/venexene/wbl0-orders-service/internal/models"
 )
 
 // Структура консьюмера
 type Consumer struct {
-	reader  *kafka.Reader
-	storage *database.Storage
+	reader    *kafka.Reader
+	storage   *database.Storage
+	validator *validator.Validate
 }
 
 // Конструктор консьюмера
@@ -33,7 +36,13 @@ func NewConsumer(brokers []string, topic string, storage *database.Storage) *Con
 
 	})
 
-	return &Consumer{reader: reader, storage: storage}
+	validate := validator.New()
+
+	return &Consumer{
+		reader: reader,
+		storage: storage,
+		validator: validate,
+	}
 }
 
 // Основной метод для получения сообщений
@@ -53,6 +62,12 @@ func (c *Consumer) Consume(ctx context.Context) {
 			continue
 		}
 		
+		// Валидация структуры
+		if err := c.validator.Struct(order); err != nil {
+			log.Printf("Failed to validate: %v", err)
+			continue
+		}
+
 		// Сохраниение в БД
 		if err := c.storage.AddOrderIfNotExists(ctx, &order); err != nil {
 			log.Printf("Failed to add order: %v", err)

@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
-    crand "crypto/rand"
     mrand "math/rand/v2"
 	"encoding/json"
 	"fmt"
 	"log"
 	"time"
-
 	"github.com/segmentio/kafka-go"
+    "github.com/google/uuid"
 )
 
 //Структура для заказа
@@ -117,17 +116,17 @@ func main() {
 
 // Генерация случайного заказа
 func generateRandomOrder() Order {
-    orderUID := generateUUID()
+    orderUID := uuid.New().String()
     currentTime := time.Now()
 
     delivery := Delivery {
         OrderUID: orderUID,
-        Name:    generateRandomString(15),
+        Name:    generateRandomString(100),
         Phone:   generateRandomPhone(),
         Zip:     fmt.Sprintf("%d", mrand.IntN(100000)),
-        City:    generateRandomString(10),
+        City:    generateRandomString(20),
         Address: generateRandomString(20),
-        Region:  generateRandomString(10),
+        Region:  generateRandomString(20),
         Email:   generateRandomEmail(),
     }
 
@@ -139,7 +138,7 @@ func generateRandomOrder() Order {
         Provider:     "WBPAY",
         Amount:       mrand.IntN(100000) + 10,
         PaymentDt:    currentTime.Unix() - int64(mrand.IntN(1000000)),
-        Bank:         generateRandomString(10),
+        Bank:         generateRandomString(15),
         DeliveryCost: mrand.IntN(1000),
         GoodsTotal:   mrand.IntN(500),
         CustomFee:    mrand.IntN(100),
@@ -150,7 +149,7 @@ func generateRandomOrder() Order {
     for i := 0; i < itemsCount; i++ {
         item := Item {
             OrderUID:    orderUID,
-            ChrtID:      mrand.IntN(100000),
+            ChrtID:      mrand.IntN(100000) + 1,
             TrackNumber: generateRandomString(10), 
             Price:       mrand.IntN(100000),
             Rid:         generateRandomString(20),
@@ -158,7 +157,7 @@ func generateRandomOrder() Order {
             Sale:        mrand.IntN(99),
             Size:        fmt.Sprintf("%d", mrand.IntN(5) + 1),
             TotalPrice:  mrand.IntN(100000),
-            NmID:        mrand.IntN(100000),
+            NmID:        mrand.IntN(100000) + 1,
             Brand:       generateRandomString(12),
             Status:      mrand.IntN(999),
         }
@@ -174,7 +173,7 @@ func generateRandomOrder() Order {
         CustomerID:        generateRandomString(8),
         DeliveryService:   generateRandomString(7),
         ShardKey:          fmt.Sprintf("%d", mrand.IntN(10)),
-        SMID:              mrand.IntN(100),
+        SMID:              mrand.IntN(100) + 1,
         DateCreated:       currentTime,
         OOFShard:          fmt.Sprintf("%d", mrand.IntN(10)),
         Delivery:          delivery,
@@ -194,14 +193,6 @@ func generateRandomString(length int) string {
         b[i] = charset[mrand.IntN(len(charset))]
     }
     return string(b)
-}
-
-
-// Генерация случайного UUID
-func generateUUID() string {
-    b := make([]byte, 16)
-    crand.Read(b)
-    return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
 
