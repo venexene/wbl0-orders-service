@@ -14,7 +14,7 @@ import (
 
 //Структура для заказа
 type Order struct {
-    OrderUID          string    `json:"order_uid"`
+    OrderUID string `json:"order_uid"`
     TrackNumber       string    `json:"track_number"`
     Entry             string    `json:"entry"`
     Locale            string    `json:"locale"`
@@ -100,7 +100,7 @@ func main() {
         // Отправка сообщения в Kafka
         err = writer.WriteMessages(context.Background(),
             kafka.Message{
-                Key: []byte(order.OrderUID), // Ключа сообщения
+                Key:   []byte(order.OrderUID), // Ключа сообщения
                 Value: message, // Тело сообщения
             },
         )
@@ -122,64 +122,64 @@ func generateRandomOrder() Order {
 
     delivery := Delivery {
         OrderUID: orderUID,
-        Name: generateRandomString(15),
-        Phone: generateRandomPhone(),
-        Zip: fmt.Sprintf("%d", mrand.IntN(100000)),
-        City: generateRandomString(10),
+        Name:    generateRandomString(15),
+        Phone:   generateRandomPhone(),
+        Zip:     fmt.Sprintf("%d", mrand.IntN(100000)),
+        City:    generateRandomString(10),
         Address: generateRandomString(20),
-        Region: generateRandomString(10),
-        Email: generateRandomEmail(),
+        Region:  generateRandomString(10),
+        Email:   generateRandomEmail(),
     }
 
     payment := Payment {
-        OrderUID: orderUID,
-        Transaction: orderUID,
-        RequestID: generateRandomString(10),
-        Currency: "USD",
-        Provider: "WBPAY",
-        Amount: mrand.IntN(100000) + 10,
-        PaymentDt: currentTime.Unix() - int64(mrand.IntN(1000000)),
-        Bank: generateRandomString(10),
+        OrderUID:     orderUID,
+        Transaction:  orderUID,
+        RequestID:    generateRandomString(10),
+        Currency:     "USD",
+        Provider:     "WBPAY",
+        Amount:       mrand.IntN(100000) + 10,
+        PaymentDt:    currentTime.Unix() - int64(mrand.IntN(1000000)),
+        Bank:         generateRandomString(10),
         DeliveryCost: mrand.IntN(1000),
-        GoodsTotal: mrand.IntN(500),
-        CustomFee: mrand.IntN(100),
+        GoodsTotal:   mrand.IntN(500),
+        CustomFee:    mrand.IntN(100),
     }
 
     itemsCount := mrand.IntN(5) + 1 // Случайное число предметов
     var items []Item
     for i := 0; i < itemsCount; i++ {
         item := Item {
-            OrderUID: orderUID,
-            ChrtID: mrand.IntN(100000),
+            OrderUID:    orderUID,
+            ChrtID:      mrand.IntN(100000),
             TrackNumber: generateRandomString(10), 
-            Price: mrand.IntN(100000),
-            Rid: generateRandomString(20),
-            Name: generateRandomString(15),
-            Sale: mrand.IntN(99),
-            Size: fmt.Sprintf("%d", mrand.IntN(5) + 1),
-            TotalPrice: mrand.IntN(100000),
-            NmID: mrand.IntN(100000),
-            Brand: generateRandomString(12),
-            Status: mrand.IntN(999),
+            Price:       mrand.IntN(100000),
+            Rid:         generateRandomString(20),
+            Name:        generateRandomString(15),
+            Sale:        mrand.IntN(99),
+            Size:        fmt.Sprintf("%d", mrand.IntN(5) + 1),
+            TotalPrice:  mrand.IntN(100000),
+            NmID:        mrand.IntN(100000),
+            Brand:       generateRandomString(12),
+            Status:      mrand.IntN(999),
         }
         items = append(items, item)
     }
 
     order := Order {
-        OrderUID: orderUID,
-        TrackNumber: generateRandomString(10),
-        Entry: generateRandomString(4),
-        Locale: "ru",
+        OrderUID:          orderUID,
+        TrackNumber:       generateRandomString(10),
+        Entry:             generateRandomString(4),
+        Locale:            "ru",
         InternalSignature: generateRandomString(10),
-        CustomerID: generateRandomString(8),
-        DeliveryService: generateRandomString(7),
-        ShardKey: fmt.Sprintf("%d", mrand.IntN(10)),
-        SMID: mrand.IntN(100),
-        DateCreated: currentTime,
-        OOFShard: fmt.Sprintf("%d", mrand.IntN(10)),
-        Delivery: delivery,
-        Payment: payment,
-        Items: items,
+        CustomerID:        generateRandomString(8),
+        DeliveryService:   generateRandomString(7),
+        ShardKey:          fmt.Sprintf("%d", mrand.IntN(10)),
+        SMID:              mrand.IntN(100),
+        DateCreated:       currentTime,
+        OOFShard:          fmt.Sprintf("%d", mrand.IntN(10)),
+        Delivery:          delivery,
+        Payment:           payment,
+        Items:             items,
     }
     
     return order

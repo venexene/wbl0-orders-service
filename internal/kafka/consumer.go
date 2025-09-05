@@ -13,7 +13,7 @@ import (
 
 // Структура консьюмера
 type Consumer struct {
-	reader *kafka.Reader
+	reader  *kafka.Reader
 	storage *database.Storage
 }
 

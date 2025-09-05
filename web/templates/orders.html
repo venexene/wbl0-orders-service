@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders List</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Orders List</h1>
+        
+        <div class="search-form">
+            <input type="text" id="searchInput" placeholder="Search by UUID..." onkeyup="filterOrders()">
+            <span id="searchStatus"></span>
+        </div>
+
+        <ul class="orders-list" id="ordersList">
+            {{range .orders}}
+                <li class="order-item"><a href="/{{.}}">{{.}}</a></li>
+            {{else}}
+                <li>No orders found</li>
+            {{end}}
+        </ul>
+    </div>
+
+    <script>
+        function filterOrders() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toUpperCase();
+            const ul = document.getElementById('ordersList');
+            const li = ul.getElementsByClassName('order-item');
+            let visibleCount = 0;
+            
+            let noResultsMsg = document.getElementById('noResultsMessage');
+            
+            for (let i = 0; i < li.length; i++) {
+                const a = li[i].getElementsByTagName("a")[0];
+                const txtValue = a.textContent || a.innerText;
+                
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    li[i].style.display = "";
+                    visibleCount++;
+                } else {
+                    li[i].style.display = "none";
+                }
+            }
+            
+            if (visibleCount === 0 && filter.length > 0) {
+                if (!noResultsMsg) {
+                    noResultsMsg = document.createElement('li');
+                    noResultsMsg.id = 'noResultsMessage';
+                    noResultsMsg.className = 'no-results';
+                    noResultsMsg.textContent = 'No orders match your search';
+                    ul.appendChild(noResultsMsg);
+                }
+            } else if (noResultsMsg) {
+                ul.removeChild(noResultsMsg);
+            }
+            
+            const statusElement = document.getElementById('searchStatus');
+            if (filter.length > 0) {
+                statusElement.textContent = `Found ${visibleCount} of ${li.length} orders`;
+            } else {
+                statusElement.textContent = `Total: ${li.length} orders`;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            filterOrders();
+        });
+    </script>
+</body>
+</html>

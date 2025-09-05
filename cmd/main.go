@@ -59,36 +59,49 @@ func main() {
 	router := gin.Default()
 	log.Printf("Created GIN router")
 
+	
+	router.LoadHTMLGlob("web/templates/*") // Загрузка HTML шаблонов
+	router.Static("/static", "./web/static") // Загрузка статических файлов
+
 
 	// Создание хендлера
 	handler := handlers.NewHandler(storage, cfg)
 
 
     //Тестовый эндпоинт для проверки работы сервера
-    router.GET("/server_check", func(c *gin.Context) {
+    router.GET("/api/server_check", func(c *gin.Context) {
 		handler.TestServerHandle(c)
     })
 
     //Тестовый эндпоинт для проверки подключения к базе
-    router.GET("/db_check", func(c *gin.Context) {
+    router.GET("/api/db_check", func(c *gin.Context) {
 		handler.TestDBHandle(c)
     })
 
 	//Тестовый эндпоинт для проверки работы Kafka
-	router.GET("/kafka_check", func(c *gin.Context) {
+	router.GET("/api/kafka_check", func(c *gin.Context) {
 		handler.TestKafkaHandle(c)
 	})
 
 	//Эндпоинт для получения информации о заказе по UID
-	router.GET("/orders/:uid", func(c *gin.Context) {
+	router.GET("/api/orders/:uid", func(c *gin.Context) {
     	handler.GetOrderByUIDHandle(c)
 	})
 
 	//Эндпоинт для получения UID всех заказов
-	router.GET("/all_orders_uids", func(c *gin.Context) {
+	router.GET("/api/all_orders_uids", func(c *gin.Context) {
     	handler.GetAllOrdersUIDHandle(c)
 	})
 
+	// Эндпоинт для основной страницы со списком заказов
+	router.GET("/", func(c *gin.Context) {
+		handler.AllOrdersPageHandle(c)
+	})
+
+	// Эндпоинт для страницы о заказе
+	router.GET("/:uid", func(c *gin.Context) {
+		handler.OrderPageHandle(c)
+	})
 
 	// Создание сервера
 	srv := &http.Server{

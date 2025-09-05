@@ -17,14 +17,14 @@ import (
 // Структура хендлера
 type Handler struct {
     storage *database.Storage
-    cfg *config.Config
+    cfg     *config.Config
 }
 
 // Конструктор структуры хендлера
 func NewHandler(storage *database.Storage, cfg *config.Config) *Handler {
     return &Handler{
         storage: storage,
-        cfg: cfg,
+        cfg:     cfg,
     }
 }
 
@@ -131,4 +131,52 @@ func (h *Handler) GetAllOrdersUIDHandle(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
         "order_uids": orderUIDs,
     })
+}
+
+
+// Хендлер для страницы основной страницы со всеми заказами
+func (h* Handler) AllOrdersPageHandle(c *gin.Context) {
+    orderUIDs, err := h.storage.GetAllOrdersUID(c)
+
+    if err != nil {
+        log.Printf("Failed to get UIDs: %v", err)
+        c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+            "error": "Failed to load orders",
+        })
+        return
+    }
+
+    c.HTML(http.StatusOK, "orders.html", gin.H{
+        "orders": orderUIDs,
+    })
+}
+
+
+// Хендлер для страницы о заказе
+func (h* Handler) OrderPageHandle(c *gin.Context) {
+    orderUID := c.Param("uid")
+
+    if orderUID == "" {
+        c.HTML(http.StatusBadRequest, "error.html", gin.H{
+            "error": "No UID received",
+        })
+        return
+    }
+
+    order, err := h.storage.GetOrderByUID(c.Request.Context(), orderUID)
+    if err != nil {
+        log.Printf("Failed to get info by UID: %v", err)
+        if errors.Is(err, pgx.ErrNoRows) {
+            c.HTML(http.StatusNotFound, "error.html", gin.H{
+                "error": "Orders not found",
+            })
+        } else {
+            c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+                "error": "Internal server error",
+            })
+        }
+        return
+    }
+
+    c.HTML(http.StatusOK, "order.html", order)
 }
