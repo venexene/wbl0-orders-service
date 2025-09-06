@@ -6,9 +6,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/segmentio/kafka-go"
 	"github.com/go-playground/validator/v10"
+	"github.com/segmentio/kafka-go"
 
+	"github.com/venexene/wbl0-orders-service/internal/cache"
 	"github.com/venexene/wbl0-orders-service/internal/db"
 	"github.com/venexene/wbl0-orders-service/internal/models"
 )
@@ -18,10 +19,11 @@ type Consumer struct {
 	reader    *kafka.Reader
 	storage   *database.Storage
 	validator *validator.Validate
+	cache	  *cache.Cache
 }
 
 // Конструктор консьюмера
-func NewConsumer(brokers []string, topic string, storage *database.Storage) *Consumer {
+func NewConsumer(brokers []string, topic string, storage *database.Storage, cache *cache.Cache) *Consumer {
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: brokers,
 		Topic: topic,
@@ -42,6 +44,7 @@ func NewConsumer(brokers []string, topic string, storage *database.Storage) *Con
 		reader: reader,
 		storage: storage,
 		validator: validate,
+		cache: cache,
 	}
 }
 
@@ -73,6 +76,7 @@ func (c *Consumer) Consume(ctx context.Context) {
 			log.Printf("Failed to add order: %v", err)
 		} else {
 			log.Printf("Order saved with UID %s", order.OrderUID)
+			c.cache.Set(&order) // Добавление в кэш
 		}
 	}
 }

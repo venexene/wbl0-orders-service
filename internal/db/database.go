@@ -164,7 +164,6 @@ func (s *Storage) GetOrderByUID(context context.Context, orderUID string) (*mode
     }
     order.Items = items
 
-
     
     return &order, nil
 }

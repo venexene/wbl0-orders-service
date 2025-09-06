@@ -1,30 +1,33 @@
 package handlers
 
 import (
-    "net/http"
+	"context"
 	"errors"
-    "context"
-    "time"
-    "log"
-    "github.com/gin-gonic/gin"
-    "github.com/jackc/pgx/v5"
-    "github.com/segmentio/kafka-go"
-	"github.com/venexene/wbl0-orders-service/internal/db"
-    "github.com/venexene/wbl0-orders-service/internal/config"
-)
+	"log"
+	"net/http"
+	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
+	"github.com/segmentio/kafka-go"
+	"github.com/venexene/wbl0-orders-service/internal/cache"
+	"github.com/venexene/wbl0-orders-service/internal/config"
+	"github.com/venexene/wbl0-orders-service/internal/db"
+)
 
 // Структура хендлера
 type Handler struct {
     storage *database.Storage
     cfg     *config.Config
+    cache   *cache.Cache
 }
 
 // Конструктор структуры хендлера
-func NewHandler(storage *database.Storage, cfg *config.Config) *Handler {
+func NewHandler(storage *database.Storage, cfg *config.Config, cache *cache.Cache) *Handler {
     return &Handler{
         storage: storage,
         cfg:     cfg,
+        cache:   cache,
     }
 }
 
@@ -94,6 +97,12 @@ func (h *Handler) GetOrderByUIDHandle(c *gin.Context) {
         return
     }
 
+    //Проверка наличия в кэше
+    if cachedOrder, exists := h.cache.Get(orderUID); exists {
+        c.JSON(http.StatusOK, cachedOrder)
+        return
+    }
+
     // Вызов функции получения всей информации о заказе по UID
     order, err := h.storage.GetOrderByUID(c.Request.Context(), orderUID)
     
@@ -112,6 +121,7 @@ func (h *Handler) GetOrderByUIDHandle(c *gin.Context) {
         return
     }
 
+    h.cache.Set(order)
     c.JSON(http.StatusOK, order)
 }
 
@@ -160,6 +170,11 @@ func (h* Handler) OrderPageHandle(c *gin.Context) {
         c.HTML(http.StatusBadRequest, "error.html", gin.H{
             "error": "No UID received",
         })
+        return
+    }
+
+    if cachedOrder, exists := h.cache.Get(orderUID); exists {
+        c.HTML(http.StatusOK, "order.html", cachedOrder)
         return
     }
 

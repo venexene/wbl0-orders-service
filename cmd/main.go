@@ -5,13 +5,15 @@ import (
 	"log"
 	"net/http"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
-	"strings"
+
 	"github.com/gin-gonic/gin"
+	"github.com/venexene/wbl0-orders-service/internal/api"
+	"github.com/venexene/wbl0-orders-service/internal/cache"
 	"github.com/venexene/wbl0-orders-service/internal/config"
 	"github.com/venexene/wbl0-orders-service/internal/db"
-	"github.com/venexene/wbl0-orders-service/internal/api"
 	"github.com/venexene/wbl0-orders-service/internal/kafka"
 )
 
@@ -38,12 +40,24 @@ func main() {
 	storage := database.NewStorage(pool)
 	log.Println("Connected database")
 
+
+	// Создание кэша
+	cache := cache.NewCache()
+	log.Println("Created cache")
+
+	// Заполнение кэша
+	if err := cache.Populate(context.Background(), storage); err != nil {
+		log.Printf("Failed to populate cache: %v", err)
+	} else {
+		log.Printf("Populated cache with %d orders", cache.Size())
+	}
 	
 	// Создание консьюмера Kafka
 	kafkaConsumer := consumer.NewConsumer(
 		strings.Split(cfg.KafkaBrokers, ","),
 		cfg.KafkaTopic,
 		storage,
+		cache,
 	)
 	defer kafkaConsumer.Close()
 	log.Println("Created Kafka consumer")
@@ -65,7 +79,7 @@ func main() {
 
 
 	// Создание хендлера
-	handler := handlers.NewHandler(storage, cfg)
+	handler := handlers.NewHandler(storage, cfg, cache)
 
 
     //Тестовый эндпоинт для проверки работы сервера
