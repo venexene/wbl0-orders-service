@@ -42,7 +42,7 @@ func main() {
 
 
 	// Создание кэша
-	cache := cache.NewCache()
+	cache := cache.NewCache(cfg.CacheCapacity)
 	log.Println("Created cache")
 
 	// Заполнение кэша

@@ -317,7 +317,7 @@ func (s *Storage) GetAllOrdersUID(ctx context.Context) ([]string, error) {
     // Получение всех uid из БД
     rows, err := s.pool.Query(ctx, query)
     if err != nil {
-        return nil, fmt.Errorf("Failed to scan orders: %v", err)
+        return nil, fmt.Errorf("Failed to  query orders: %v", err)
     }
     defer rows.Close()
 
@@ -338,4 +338,30 @@ func (s *Storage) GetAllOrdersUID(ctx context.Context) ([]string, error) {
     }
 
     return listUIDs, nil
+}
+
+
+func (s *Storage) GetRecentOrdersUID(ctx context.Context, limit int) ([]string, error) {
+    query := "SELECT order_uid FROM orders ORDER BY date_created DESC LIMIT $1"
+
+    rows, err := s.pool.Query(ctx, query, limit)
+    if err != nil {
+        return nil, fmt.Errorf("Failes to query recent irders: %v", err)
+    }
+    defer rows.Close()
+
+    var uids []string
+    for rows.Next() {
+        var uid string 
+        if err := rows.Scan(&uid); err != nil {
+            return nil, fmt.Errorf("Failed to scan order_uid: %v", err)
+        }
+        uids = append(uids, uid)
+    }
+
+    if err := rows.Err(); err != nil {
+        return nil, fmt.Errorf("Failed to iterate order_uid: %v", err)
+    }
+
+    return uids, nil
 }

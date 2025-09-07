@@ -2,45 +2,112 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 
-	"github.com/venexene/wbl0-orders-service/internal/models"
 	"github.com/venexene/wbl0-orders-service/internal/db"
+	"github.com/venexene/wbl0-orders-service/internal/models"
 )
+
+type cacheNode struct {
+	key   string
+	value *models.Order
+	prev  *cacheNode
+	next  *cacheNode
+}
 
 // Структура кэша
 type Cache struct {
-	elems map[string] *models.Order
-	mu sync.RWMutex
+	capacity int
+	elems    map[string] *cacheNode
+	head     *cacheNode
+	tail     *cacheNode
+	mu       sync.RWMutex
 }
 
 // Конструктор кэша
-func NewCache() *Cache {
-	elems := make(map[string] *models.Order)
+func NewCache(capacity int) *Cache {
+	elems := make(map[string] *cacheNode)
 
 	cache := Cache {
+		capacity: capacity,
 		elems: elems,
+		head: &cacheNode{},
+		tail: &cacheNode{},
 	}
+	
+	cache.head.next = cache.tail
+	cache.tail.prev = cache.head
 
 	return &cache
 }
+
+
+
+// Добавление узла
+func (c *Cache) addNode(n *cacheNode) {
+	n.prev = c.head
+	n.next = c.head.next
+	c.head.next.prev = n
+	c.head.next = n
+}
+
+// Удаление узла
+func (c* Cache) removeNode(n *cacheNode) {
+	prev := n.prev
+	next := n.next
+	prev.next = next
+	next.prev = prev
+}
+
+// Перенос узла в начало списка
+func (c *Cache) moveToHead(n *cacheNode) {
+	c.removeNode(n)
+	c.addNode(n)
+}
+
+// Удаление последнего узла списка
+func (c*Cache) popTail() *cacheNode {
+	res := c.tail.prev
+	c.removeNode(res)
+	return res
+}
+
 
 
 // Добавление данных в кэш
 func (c *Cache) Set(order *models.Order) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.elems[order.OrderUID] = order
-	log.Printf("Added order %s to cache", order.OrderUID)
+
+	if n, exist := c.elems[order.OrderUID]; exist {
+		n.value = order
+		c.moveToHead(n)
+		return
+	}
+
+	n := &cacheNode{key: order.OrderUID, value: order}
+	c.elems[order.OrderUID] = n
+	c.addNode(n)
+
+	if len(c.elems) > c.capacity {
+		tail := c.popTail()
+		delete(c.elems, tail.key)
+	}
 }
 
 // Получение данных из кэша
 func (c *Cache) Get(key string) (*models.Order, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	order, exists := c.elems[key]
-	return order, exists
+	
+	if n, exist := c.elems[key]; exist {
+		c.moveToHead(n)
+		return n.value, true
+	}
+
+	return nil, false
 }
 
 // Удаление из кэша
@@ -48,7 +115,6 @@ func (c *Cache) Delete(key string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.elems, key)
-	log.Printf("Deleted order %s from cache", key)
 }
 
 // Получение UID всех заказов в кэше
@@ -71,10 +137,9 @@ func (c *Cache) Size() int {
 
 // Заполнение кэша
 func (c *Cache) Populate(ctx context.Context, storage *database.Storage) error {
-	uids, err := storage.GetAllOrdersUID(ctx)
+	uids, err := storage.GetRecentOrdersUID(ctx, c.capacity)
 	if err != nil {
-		log.Printf("Failed to get all orders from db: %v", err)
-		return err
+		return fmt.Errorf("Failed to get recent orders: %v", err)
 	}
 
 	var loadCount int
@@ -88,6 +153,5 @@ func (c *Cache) Populate(ctx context.Context, storage *database.Storage) error {
 		loadCount++
 	}
 
-	log.Printf("Populated cache with %d orders", loadCount)
 	return nil
 }
