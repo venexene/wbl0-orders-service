@@ -6,7 +6,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/venexene/wbl0-orders-service/internal/db"
+	"github.com/venexene/wbl0-orders-service/internal/database"
 	"github.com/venexene/wbl0-orders-service/internal/models"
 )
 

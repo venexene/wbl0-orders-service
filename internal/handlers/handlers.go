@@ -10,20 +10,21 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/segmentio/kafka-go"
+    
 	"github.com/venexene/wbl0-orders-service/internal/cache"
 	"github.com/venexene/wbl0-orders-service/internal/config"
-	"github.com/venexene/wbl0-orders-service/internal/db"
+	"github.com/venexene/wbl0-orders-service/internal/database"
 )
 
 // Структура хендлера
 type Handler struct {
-    storage *database.Storage
+    storage database.StorageInterface
     cfg     *config.Config
     cache   *cache.Cache
 }
 
 // Конструктор структуры хендлера
-func NewHandler(storage *database.Storage, cfg *config.Config, cache *cache.Cache) *Handler {
+func NewHandler(storage database.StorageInterface, cfg *config.Config, cache *cache.Cache) *Handler {
     return &Handler{
         storage: storage,
         cfg:     cfg,

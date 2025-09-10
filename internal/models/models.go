@@ -1,8 +1,14 @@
 package models
 
 import (
-    "time"
+	"encoding/json"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/go-playground/validator/v10"
 )
+
 
 //Структура для заказа
 type Order struct {
@@ -64,4 +70,24 @@ type Item struct {
     NmID        uint   `json:"nm_id" validate:"required,min=1"`
     Brand       string `json:"brand" validate:"required,max=50"`
     Status      uint   `json:"status" validate:"required,max=999"`
+}
+
+// Загрузка заказа из файла
+func LoadOrderFromFile(path string) (*Order, error) {
+    data, err := os.ReadFile(path)
+    if err != nil {
+        return nil, fmt.Errorf("Failed to read file %s: %v", path, err)
+    }
+
+    var order Order
+    if err := json.Unmarshal(data, &order); err != nil {
+        return nil, fmt.Errorf("Failed to unmarshal JSON: %v", err)
+    }
+
+    validate := validator.New()
+    if err := validate.Struct(order); err != nil {
+        return nil, fmt.Errorf("Failed to validate order: %v", err)
+    }
+
+    return &order, nil
 }

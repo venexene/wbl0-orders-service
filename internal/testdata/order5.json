@@ -1,0 +1,62 @@
+{
+  "order_uid": "1111b7f1-c455-4300-bfdc-d339429c2099",
+  "track_number": "WBILMTESTTRACK",
+  "entry": "WBIL",
+  "delivery": {
+    "name": "Test Testov",
+    "phone": "+9720000000",
+    "zip": "2639809",
+    "city": "Kiryat Mozkin",
+    "address": "Ploshad Mira 15",
+    "region": "Kraiot",
+    "email": "test@gmail.com"
+  },
+  "payment": {
+    "transaction": "1111b7f1-c455-4300-bfdc-d339429c2099",
+    "request_id": "",
+    "currency": "USD",
+    "provider": "wbpay",
+    "amount": 1317,
+    "payment_dt": 1637907227,
+    "bank": "alpha",
+    "delivery_cost": 1500,
+    "goods_total": 317,
+    "custom_fee": 0
+  },
+  "items": [
+    {
+      "chrt_id": 2955931,
+      "track_number": "WBILMTESTTRACK",
+      "price": 453,
+      "rid": "bbb4215387a764ae0btest",
+      "name": "Fork",
+      "sale": 30,
+      "size": "0",
+      "total_price": 317,
+      "nm_id": 2389112,
+      "brand": "Vivienne Sabo",
+      "status": 202
+    },
+    {
+      "chrt_id": 1925930,
+      "track_number": "WBILMTESTTRACK",
+      "price": 453,
+      "rid": "ddd4219087a764ae0btest",
+      "name": "Plate",
+      "sale": 30,
+      "size": "0",
+      "total_price": 317,
+      "nm_id": 2383412,
+      "brand": "Vivienne Sabo",
+      "status": 202
+    }
+  ],
+  "locale": "en",
+  "internal_signature": "",
+  "customer_id": "test",
+  "delivery_service": "meest",
+  "shardkey": "9",
+  "sm_id": 99,
+  "date_created": "2021-11-26T06:22:19Z",
+  "oof_shard": "1"
+}

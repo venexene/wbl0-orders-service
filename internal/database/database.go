@@ -5,8 +5,10 @@ import (
     "fmt"
     "time"
     "errors"
+    
     "github.com/jackc/pgx/v5"
     "github.com/jackc/pgx/v5/pgxpool"
+
     "github.com/venexene/wbl0-orders-service/internal/config"
     "github.com/venexene/wbl0-orders-service/internal/models"
 )
@@ -14,6 +16,16 @@ import (
 // Структура для работы с БД
 type Storage struct {
     pool *pgxpool.Pool
+}
+
+type StorageInterface interface {
+    TestDB() (string, error)
+    GetOrderByUID(ctx context.Context, orderUID string) (*models.Order, error)
+    GetAllOrdersUID(ctx context.Context) ([]string, error)
+    GetRecentOrdersUID(ctx context.Context, limit int) ([]string, error)
+    OrderExists(ctx context.Context, orderUID string) (bool, error)
+    AddOrder(ctx context.Context, order *models.Order) error 
+    AddOrderIfNotExists(ctx context.Context, order *models.Order) error 
 }
 
 // Конструктор структуры для БД

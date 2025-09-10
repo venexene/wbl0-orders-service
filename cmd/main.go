@@ -10,10 +10,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/venexene/wbl0-orders-service/internal/api"
+	
+	"github.com/venexene/wbl0-orders-service/internal/handlers"
 	"github.com/venexene/wbl0-orders-service/internal/cache"
 	"github.com/venexene/wbl0-orders-service/internal/config"
-	"github.com/venexene/wbl0-orders-service/internal/db"
+	"github.com/venexene/wbl0-orders-service/internal/database"
 	"github.com/venexene/wbl0-orders-service/internal/kafka"
 )
 
