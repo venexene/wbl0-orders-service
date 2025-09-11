@@ -9,7 +9,7 @@ import (
 // Тестирование основных операций с кэшем
 func TestCacheSetGet(t *testing.T) {
 	cache := NewCache(2)
-	order, err := models.LoadOrderFromFile("../testdata/order1.json")
+	order, err := models.LoadOrderFromFile("../../testdata/order1.json")
 	if err != nil {
 		t.Errorf("Failed to load order from file: %v", err)
 	}
@@ -27,17 +27,17 @@ func TestCacheSetGet(t *testing.T) {
 // Тестирование основных вытеснения из кэша
 func TestCacheEviction(t *testing.T) {
 	cache := NewCache(2)
-	order1, err := models.LoadOrderFromFile("../testdata/order1.json")
+	order1, err := models.LoadOrderFromFile("../../testdata/order1.json")
 	if err != nil {
 		t.Errorf("Failed to load order1 from file: %v", err)
 	}
 
-	order2, err := models.LoadOrderFromFile("../testdata/order2.json")
+	order2, err := models.LoadOrderFromFile("../../testdata/order2.json")
 	if err != nil {
 		t.Errorf("Failed to load order2 from file: %v", err)
 	}
 
-	order3, err := models.LoadOrderFromFile("../testdata/order3.json")
+	order3, err := models.LoadOrderFromFile("../../testdata/order3.json")
 	if err != nil {
 		t.Errorf("Failed to load order3 from file: %v", err)
 	}
@@ -63,17 +63,17 @@ func TestCacheEviction(t *testing.T) {
 func TestCacheGetAllUIDs(t *testing.T) {
 	cache := NewCache(3)
 	
-	order1, err := models.LoadOrderFromFile("../testdata/order1.json")
+	order1, err := models.LoadOrderFromFile("../../testdata/order1.json")
 	if err != nil {
 		t.Errorf("Failed to load order1 from file: %v", err)
 	}
 
-	order2, err := models.LoadOrderFromFile("../testdata/order2.json")
+	order2, err := models.LoadOrderFromFile("../../testdata/order2.json")
 	if err != nil {
 		t.Errorf("Failed to load order2 from file: %v", err)
 	}
 
-	order3, err := models.LoadOrderFromFile("../testdata/order3.json")
+	order3, err := models.LoadOrderFromFile("../../testdata/order3.json")
 	if err != nil {
 		t.Errorf("Failed to load order3 from file: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestCacheGetAllUIDs(t *testing.T) {
 func TestCacheDelete(t *testing.T) {
 	cache := NewCache(2)
 
-	order, err := models.LoadOrderFromFile("../testdata/order1.json")
+	order, err := models.LoadOrderFromFile("../../testdata/order1.json")
 	if err != nil {
 		t.Errorf("Failed to load order1 from file: %v" ,err)
 	}

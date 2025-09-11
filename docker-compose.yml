@@ -99,6 +99,8 @@ services:
   kafka-emulator:
     build:
       context: ./tools/producer-emulator
+    volumes:
+      - ./testdata:/app/testdata
     depends_on:
       kafka:
         condition: service_healthy

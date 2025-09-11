@@ -8,11 +8,11 @@ import (
 
 // Тестирование загрузки из файла
 func TestLoadOrderFromFile(t *testing.T) {
-	if _, err := LoadOrderFromFile("../testdata/order1.json"); err != nil {
+	if _, err := LoadOrderFromFile("../../testdata/order1.json"); err != nil {
 		t.Errorf("Failed to load order from file: %v" ,err)
 	}
 
-	if _, err := LoadOrderFromFile("../testdata/order_no.json"); err == nil {
+	if _, err := LoadOrderFromFile("../../testdata/order_no.json"); err == nil {
 		t.Errorf("Expected error for non-existent file")
 	}
 
@@ -26,7 +26,7 @@ func TestLoadOrderFromFile(t *testing.T) {
 func TestOrderValidation(t *testing.T) {
 	val := validator.New()
 
-	validOrder, err := LoadOrderFromFile("../testdata/order1.json")
+	validOrder, err := LoadOrderFromFile("../../testdata/order1.json")
 	if err != nil {
 		t.Errorf("Failed to load order from file: %v" ,err)
 	}

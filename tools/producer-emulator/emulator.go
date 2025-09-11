@@ -2,11 +2,15 @@ package main
 
 import (
 	"context"
-    mrand "math/rand/v2"
+    "math/rand/v2"
 	"encoding/json"
+    "os"
 	"fmt"
 	"log"
 	"time"
+    "path/filepath"
+
+	"github.com/go-playground/validator/v10"
 	"github.com/segmentio/kafka-go"
     "github.com/google/uuid"
 )
@@ -73,6 +77,25 @@ type Item struct {
     Status      int    `json:"status"`
 }
 
+func loadOrderFromFile(path string) (*Order, error) {
+    data, err := os.ReadFile(path)
+    if err != nil {
+        return nil, fmt.Errorf("Failed to read file %s: %v", path, err)
+    }
+
+    var order Order
+    if err := json.Unmarshal(data, &order); err != nil {
+        return nil, fmt.Errorf("Failed to unmarshal JSON: %v", err)
+    }
+
+    validate := validator.New()
+    if err := validate.Struct(order); err != nil {
+        return nil, fmt.Errorf("Failed to validate order: %v", err)
+    }
+
+    return &order, nil
+}
+
 
 func main() {
 	kafkaBrokers := []string{"kafka:9092"}
@@ -112,6 +135,40 @@ func main() {
 
         time.Sleep(1 * time.Second)
     }
+
+    
+    // Отправка заказов, загружаемых из файлов
+    for i := 1; i < 6; i++ {
+        filename := filepath.Join("testdata", fmt.Sprintf("order%d.json", i))
+        order, err := loadOrderFromFile(filename)
+        if err != nil {
+             log.Printf("Failed to marshal order: %v", err)
+             continue
+        }
+
+        // Отправка сообщения в Kafka
+        message, err := json.Marshal(order)
+        if err != nil {
+            log.Printf("Failed to marshal order: %v", err)
+			continue
+        }
+
+        // Отправка сообщения в Kafka
+        err = writer.WriteMessages(context.Background(),
+            kafka.Message{
+                Key:   []byte(order.OrderUID), // Ключа сообщения
+                Value: message, // Тело сообщения
+            },
+        )
+
+        if err != nil {
+            log.Fatalf("Failed to write message: %v", err)
+        } else {
+            log.Printf("Message successfully sent to Kafka")
+        }
+
+        time.Sleep(1 * time.Second)
+    }
 }
 
 // Генерация случайного заказа
@@ -123,7 +180,7 @@ func generateRandomOrder() Order {
         OrderUID: orderUID,
         Name:    generateRandomString(100),
         Phone:   generateRandomPhone(),
-        Zip:     fmt.Sprintf("%d", mrand.IntN(100000)),
+        Zip:     fmt.Sprintf("%d", rand.IntN(100000)),
         City:    generateRandomString(20),
         Address: generateRandomString(20),
         Region:  generateRandomString(20),
@@ -136,30 +193,30 @@ func generateRandomOrder() Order {
         RequestID:    generateRandomString(10),
         Currency:     "USD",
         Provider:     "WBPAY",
-        Amount:       mrand.IntN(100000) + 10,
-        PaymentDt:    currentTime.Unix() - int64(mrand.IntN(1000000)),
+        Amount:       rand.IntN(100000) + 10,
+        PaymentDt:    currentTime.Unix() - int64(rand.IntN(1000000)),
         Bank:         generateRandomString(15),
-        DeliveryCost: mrand.IntN(1000),
-        GoodsTotal:   mrand.IntN(500),
-        CustomFee:    mrand.IntN(100),
+        DeliveryCost: rand.IntN(1000),
+        GoodsTotal:   rand.IntN(500),
+        CustomFee:    rand.IntN(100),
     }
 
-    itemsCount := mrand.IntN(5) + 1 // Случайное число предметов
+    itemsCount := rand.IntN(5) + 1 // Случайное число предметов
     var items []Item
     for i := 0; i < itemsCount; i++ {
         item := Item {
             OrderUID:    orderUID,
-            ChrtID:      mrand.IntN(100000) + 1,
+            ChrtID:      rand.IntN(100000) + 1,
             TrackNumber: generateRandomString(10), 
-            Price:       mrand.IntN(100000),
+            Price:       rand.IntN(100000),
             Rid:         generateRandomString(20),
             Name:        generateRandomString(15),
-            Sale:        mrand.IntN(99),
-            Size:        fmt.Sprintf("%d", mrand.IntN(5) + 1),
-            TotalPrice:  mrand.IntN(100000),
-            NmID:        mrand.IntN(100000) + 1,
+            Sale:        rand.IntN(99),
+            Size:        fmt.Sprintf("%d", rand.IntN(5) + 1),
+            TotalPrice:  rand.IntN(100000),
+            NmID:        rand.IntN(100000) + 1,
             Brand:       generateRandomString(12),
-            Status:      mrand.IntN(999),
+            Status:      rand.IntN(999),
         }
         items = append(items, item)
     }
@@ -172,10 +229,10 @@ func generateRandomOrder() Order {
         InternalSignature: generateRandomString(10),
         CustomerID:        generateRandomString(8),
         DeliveryService:   generateRandomString(7),
-        ShardKey:          fmt.Sprintf("%d", mrand.IntN(10)),
-        SMID:              mrand.IntN(100) + 1,
+        ShardKey:          fmt.Sprintf("%d", rand.IntN(10)),
+        SMID:              rand.IntN(100) + 1,
         DateCreated:       currentTime,
-        OOFShard:          fmt.Sprintf("%d", mrand.IntN(10)),
+        OOFShard:          fmt.Sprintf("%d", rand.IntN(10)),
         Delivery:          delivery,
         Payment:           payment,
         Items:             items,
@@ -190,7 +247,7 @@ func generateRandomString(length int) string {
     const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     b := make([]byte, length)
     for i := range b {
-        b[i] = charset[mrand.IntN(len(charset))]
+        b[i] = charset[rand.IntN(len(charset))]
     }
     return string(b)
 }
@@ -198,7 +255,7 @@ func generateRandomString(length int) string {
 
 // Генерация слайного номера телефона
 func generateRandomPhone() string {
-    return fmt.Sprintf("+7%d", mrand.IntN(1000000000))
+    return fmt.Sprintf("+7%d", rand.IntN(1000000000))
 }
 
 // Генерация случайного email
