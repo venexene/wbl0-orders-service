@@ -194,5 +194,6 @@ func (h* Handler) OrderPageHandle(c *gin.Context) {
         return
     }
 
+    h.cache.Set(order)
     c.HTML(http.StatusOK, "order.html", order)
 }
